@@ -16,28 +16,33 @@ type SenderAddress = entity.Address
 // RecipientAddress 收货地址
 type RecipientAddress = entity.Address
 
+type CreateOrderPackageGoods struct {
+	Name         string  `json:"name"`         // SKU 名称
+	Quantity     int     `json:"quantity"`     // SKU 数量
+	Code         string  `json:"code"`         // SKU 商品编码
+	Value        float64 `json:"value"`        // SKU 单价
+	CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
+}
+
+// Value 金额
+type Value struct {
+	Amount       float64 `json:"amount"`       // 金额数值
+	CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
+}
+
 // CreateOrderPackageInformation 包裹信息
 type CreateOrderPackageInformation struct {
-	SenderAddress    SenderAddress    `json:"senderAddress"`    // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
-	RecipientAddress RecipientAddress `json:"recipientAddress"` // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
-	UseImperialUnit  bool             `json:"useImperialUnit"`  // 是否使用英制单位，默认值false表示使用公制单位
-	Weight           float64          `json:"weight"`           // 重量(磅/公斤)
-	Length           int              `json:"length"`           // 长度(英寸/厘米)
-	Width            int              `json:"width"`            // 宽度(英寸/厘米)
-	Height           float64          `json:"height"`           // 高度(英寸/厘米)
-	Value            struct {
-		Amount       float64 `json:"amount"`       // 金额数值
-		CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
-	} `json:"value"`                          // 该项费用的总额和币种
-	CustomerName string `json:"customerName"` // 上游的客户名，如对接系统为ERP传入海外仓名
-	StoreName    string `json:"storeName"`    // 电商平台店铺名
-	SkuList      []struct {
-		Name         string  `json:"name"`         // SKU 名称
-		Quantity     int     `json:"quantity"`     // SKU 数量
-		Code         string  `json:"code"`         // SKU 商品编码
-		Value        float64 `json:"value"`        // SKU 单价
-		CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
-	} `json:"skuList"` // SKU列表（序列化后的JSON长度不应超过8192字符）
+	SenderAddress    SenderAddress             `json:"senderAddress"`    // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
+	RecipientAddress RecipientAddress          `json:"recipientAddress"` // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
+	UseImperialUnit  bool                      `json:"useImperialUnit"`  // 是否使用英制单位，默认值false表示使用公制单位
+	Weight           float64                   `json:"weight"`           // 重量(磅/公斤)
+	Length           int                       `json:"length"`           // 长度(英寸/厘米)
+	Width            int                       `json:"width"`            // 宽度(英寸/厘米)
+	Height           float64                   `json:"height"`           // 高度(英寸/厘米)
+	Value            Value                     `json:"value"`            // 该项费用的总额和币种
+	CustomerName     string                    `json:"customerName"`     // 上游的客户名，如对接系统为ERP传入海外仓名
+	StoreName        string                    `json:"storeName"`        // 电商平台店铺名
+	SkuList          []CreateOrderPackageGoods `json:"skuList"`          // SKU列表（序列化后的JSON长度不应超过8192字符）
 }
 
 type CreateOrderRequest struct {
@@ -50,11 +55,8 @@ type CreateOrderRequest struct {
 	ReferenceNo       string `json:"referenceNo"`       // 引用单号，默认留空，使用场景需联系商务支持
 	SelfPickupCode    string `json:"selfPickupCode"`    // 自提码，如果送货方式为自提时必填
 	InsuranceService  struct {
-		IsInsured    bool `json:"isInsured"` // 是否投保
-		InsuredValue struct {
-			Amount       int    `json:"amount"`       // 金额数值
-			CurrencyCode string `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
-		} `json:"insuredValue"` // 该项费用的总额和币种
+		IsInsured    bool  `json:"isInsured"`    // 是否投保
+		InsuredValue Value `json:"insuredValue"` // 该项费用的总额和币种
 	} `json:"insuranceService"` // 保险服务配置
 	PickupService struct {
 		IsPickup    bool   `json:"isPickup"`    // 是否揽收
