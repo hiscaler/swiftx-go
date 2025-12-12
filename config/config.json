@@ -1,0 +1,8 @@
+{
+  "debug": true,
+  "timeout": 10,
+  "env": "test",
+  "app_key": "",
+  "app_secret": "",
+  "callback_url": "http://localhost:8080/callback"
+}
