@@ -24,7 +24,7 @@ import (
 
 const (
 	Version   = "0.0.1"
-	userAgent = "SwiftX API Client-Golang/" + Version + " (https://github.com/hiscaler/swiftx-go)"
+	userAgent = "SwiftX Express API Client-Golang/" + Version + " (https://github.com/hiscaler/swiftx-go)"
 )
 
 const (
