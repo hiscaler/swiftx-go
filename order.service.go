@@ -97,17 +97,15 @@ type CreateOrderResult struct {
 }
 
 // Create 创建订单并获取面单 PDF 的 Base64 编码
-func (s orderService) Create(ctx context.Context, requests []CreateOrderRequest) ([]CreateOrderResult, error) {
-	for _, req := range requests {
-		if err := req.Validate(); err != nil {
-			return nil, invalidInput(err)
-		}
+func (s orderService) Create(ctx context.Context, request CreateOrderRequest) ([]CreateOrderResult, error) {
+	if err := request.Validate(); err != nil {
+		return nil, invalidInput(err)
 	}
 
 	var res []CreateOrderResult
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
-		SetBody(requests).
+		SetBody(request).
 		SetResult(&res).
 		Post("/createOrderAndGetLabelPdfBase64")
 	if err = recheckError(resp, err); err != nil {
