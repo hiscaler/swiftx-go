@@ -10,6 +10,36 @@ import (
 // 订单服务
 type orderService service
 
+// SenderAddress 发货地址
+type SenderAddress = entity.Address
+
+// RecipientAddress 收货地址
+type RecipientAddress = entity.Address
+
+// CreateOrderPackageInformation 包裹信息
+type CreateOrderPackageInformation struct {
+	SenderAddress    SenderAddress    `json:"senderAddress"`    // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
+	RecipientAddress RecipientAddress `json:"recipientAddress"` // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
+	UseImperialUnit  bool             `json:"useImperialUnit"`  // 是否使用英制单位，默认值false表示使用公制单位
+	Weight           float64          `json:"weight"`           // 重量(磅/公斤)
+	Length           int              `json:"length"`           // 长度(英寸/厘米)
+	Width            int              `json:"width"`            // 宽度(英寸/厘米)
+	Height           float64          `json:"height"`           // 高度(英寸/厘米)
+	Value            struct {
+		Amount       float64 `json:"amount"`       // 金额数值
+		CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
+	} `json:"value"`                          // 该项费用的总额和币种
+	CustomerName string `json:"customerName"` // 上游的客户名，如对接系统为ERP传入海外仓名
+	StoreName    string `json:"storeName"`    // 电商平台店铺名
+	SkuList      []struct {
+		Name         string  `json:"name"`         // SKU 名称
+		Quantity     int     `json:"quantity"`     // SKU 数量
+		Code         string  `json:"code"`         // SKU 商品编码
+		Value        float64 `json:"value"`        // SKU 单价
+		CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
+	} `json:"skuList"` // SKU列表（序列化后的JSON长度不应超过8192字符）
+}
+
 type CreateOrderRequest struct {
 	OrderScope        string `json:"orderScope"`        // 订单类型,例如 DOMESTIC（国内）或 INTERNATIONAL（国际)
 	ServiceType       string `json:"serviceType"`       // 服务类型， ECO-特惠 EXP-标快。建议选择EXP-标快
@@ -30,62 +60,20 @@ type CreateOrderRequest struct {
 		IsPickup    bool   `json:"isPickup"`    // 是否揽收
 		PickupStart string `json:"pickupStart"` // 揽收开始时间
 		PickupEnd   string `json:"pickupEnd"`   // 揽收结束时间
-	} `json:"pickupService"` // 揽收服务配置
-	PackageInfo struct {
-		SenderAddress struct {
-			Name             string `json:"name"`             // 姓名
-			PhoneCountryCode int    `json:"phoneCountryCode"` // 电话国际区号。如果留空，将使用regionCode对应的国际区号作为电话的区号
-			PhoneNumber      string `json:"phoneNumber"`      // 电话号码（寄件人地址可选，收件人地址必填）
-			Building         string `json:"building"`         // 电话分机号
-			StreetAddress    string `json:"streetAddress"`    // 建筑物名称，对应美国地址的address line 2
-			District         string `json:"district"`         // 街道地址，对应美国地址的address line 1
-			City             string `json:"city"`             // 城市
-			StateProvince    string `json:"stateProvince"`    // 州/省（美国州请使用2字母缩写，如CA、NY）
-			PostalCode       string `json:"postalCode"`       // 邮政编码，对应美国的zipcode。最大支持10个字符。美国zipcode支持标准5位格式（如94105）或带+4扩展代码的格式（如94105-1234）。当使用+4格式时，前5位用于业务校验和路线规划，后4位仅作为记录保存在订单数据中。SwiftX服务覆盖邮编，请联系商务获取。
-			RegionCode       string `json:"regionCode"`       // 国家编码，类似US、CN（Enum: "US" "CA" "CN"）
-		} `json:"senderAddress"` // 地址信息。注意：电话号码对于收件人地址是必填的，对于寄件人地址是可选的。
-		RecipientAddress struct {
-			Name             string `json:"name"`             // aaaa
-			PhoneCountryCode int    `json:"phoneCountryCode"` // aaaa
-			PhoneNumber      string `json:"phoneNumber"`      // aaaa
-			PhoneExtension   string `json:"phoneExtension"`   // aaaa
-			Building         string `json:"building"`         // aaaa
-			StreetAddress    string `json:"streetAddress"`    // aaaa
-			District         string `json:"district"`         // aaaa
-			City             string `json:"city"`             // aaaa
-			StateProvince    string `json:"stateProvince"`    // aaaa
-			PostalCode       string `json:"postalCode"`       // aaaa
-			RegionCode       string `json:"regionCode"`       // aaaa
-		} `json:"recipientAddress"`                      // aaaa
-		UseImperialUnit bool    `json:"useImperialUnit"` // aaaa
-		Weight          float64 `json:"weight"`          // aaaa
-		Length          int     `json:"length"`          // aaaa
-		Width           int     `json:"width"`           // aaaa
-		Height          float64 `json:"height"`          // aaaa
-		Value           struct {
-			Amount       float64 `json:"amount"`
-			CurrencyCode string  `json:"currencyCode"`
-		} `json:"value"`
-		CustomerName string `json:"customerName"`
-		StoreName    string `json:"storeName"`
-		SkuList      []struct {
-			Name         string  `json:"name"`
-			Quantity     int     `json:"quantity"`
-			Code         string  `json:"code"`
-			Value        float64 `json:"value"`
-			CurrencyCode string  `json:"currencyCode"`
-		} `json:"skuList"`
-	} `json:"packageInfo"` // 包裹信息
+	} `json:"pickupService"`                                             // 揽收服务配置
+	PackageInfo       CreateOrderPackageInformation `json:"packageInfo"` // 包裹信息
 	ShippingLabelInfo struct {
-		OrderNumber    string `json:"orderNumber"`
-		CustomerNote   string `json:"customerNote"`
-		ExtSortingCode string `json:"extSortingCode"`
-	} `json:"shippingLabelInfo"`
+		OrderNumber               string `json:"orderNumber"`               // 上游订单号，印刷的时候会加上 "Order: " 前缀
+		CustomerNote              string `json:"customerNote"`              // 客户备注，最多80个字符，会印刷到快递面单上，印刷的时候会加上 "Customer note: " 前缀
+		ExtSortingCode            string `json:"extSortingCode"`            // 外部分拣码
+		UseExternalTrackingNumber bool   `json:"useExternalTrackingNumber"` // 是否使用外部面单号
+		ExternalTrackingNumber    string `json:"externalTrackingNumber"`    // 外部面单号
+	} `json:"shippingLabelInfo"` // 运单印刷数据
 	ExtraInfo struct {
 		Platform  string `json:"platform"`
 		Priority  string `json:"priority"`
 		Warehouse string `json:"warehouse"`
-	} `json:"extraInfo"`
+	} `json:"extraInfo"` // 额外信息,字段可由客户自行扩展，对应字符串长度小于4096个字符
 }
 
 func (m CreateOrderRequest) Validate() error {
