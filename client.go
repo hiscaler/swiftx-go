@@ -151,14 +151,14 @@ func errorWrap(code int, message string) error {
 	case 429:
 		message = "超出速率限制"
 	case 500:
-		message = "服务器错误，请联系 SwiftX 客服人员"
+		message = "服务器错误，请联系 SwiftX Express 客服人员"
 	default:
 		message = strings.TrimSpace(message)
 		if message == "" {
 			message = "未知错误"
 		}
 	}
-	return fmt.Errorf("%d %s", code, message)
+	return errors.New(message)
 }
 
 func invalidInput(e error) error {
