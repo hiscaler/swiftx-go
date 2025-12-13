@@ -5,7 +5,9 @@ import (
 	"errors"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/hiscaler/swiftx-go/entity"
+	"gopkg.in/guregu/null.v4"
 )
 
 // 订单服务
@@ -26,32 +28,54 @@ type Value struct {
 // Validate 费用验证
 func (m Value) Validate() error {
 	return validation.ValidateStruct(&m,
-		validation.Field(&m.Amount, validation.Min(0.0).Error("金额不能小于0")),
+		validation.Field(&m.Amount,
+			validation.Required.Error("金额不能为空"),
+			validation.Min(0.0).Error("金额不能小于0"),
+		),
 		validation.Field(&m.CurrencyCode,
 			validation.Required.Error("币种代码不能为空"),
-			validation.In("USD", "CAD", "HKD", "CNY").ErrorObject(validation.NewError("422", "无效的币种代码 {{.value}}").SetParams(map[string]interface{}{"value": m.CurrencyCode})),
+			is.CurrencyCode.ErrorObject(
+				validation.NewError(
+					"422",
+					"无效的币种代码 {{.value}}").
+					SetParams(map[string]interface{}{"value": m.CurrencyCode}),
+			),
 		),
 	)
 }
 
 type CreateOrderPackageGoods struct {
-	Name         string  `json:"name"`         // SKU 名称
-	Quantity     int     `json:"quantity"`     // SKU 数量
-	Code         string  `json:"code"`         // SKU 商品编码
-	Value        float64 `json:"value"`        // SKU 单价
-	CurrencyCode string  `json:"currencyCode"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
+	Name         string     `json:"name"`                   // SKU 名称
+	Quantity     int        `json:"quantity"`               // SKU 数量
+	Code         string     `json:"code,omitempty"`         // SKU 商品编码
+	Value        null.Float `json:"value,omitempty"`        // SKU 单价
+	CurrencyCode string     `json:"currencyCode,omitempty"` // 币种代码（Enum: "USD" "CAD" "HKD" "CNY"）
 }
 
 // Validate SKU商品验证
 func (m CreateOrderPackageGoods) Validate() error {
 	return validation.ValidateStruct(&m,
-		validation.Field(&m.Name, validation.Required.Error("SKU名称不能为空")),
-		validation.Field(&m.Quantity, validation.Required.Error("SKU数量不能为空"), validation.Min(1).Error("SKU数量不能小于1")),
-		validation.Field(&m.Code, validation.Required.Error("SKU商品编码不能为空")),
-		validation.Field(&m.Value, validation.Min(0.0).Error("SKU单价不能小于0")),
+		validation.Field(&m.Name,
+			validation.Required.Error("SKU 名称不能为空"),
+			validation.Length(1, 255).Error("SKU 名称长度不能大于 {{.max}} 个字符"),
+		),
+		validation.Field(&m.Quantity,
+			validation.Required.Error("SKU 数量不能为空"),
+			validation.Min(1).Error("SKU 数量不能小于 {{.min}}"),
+		),
+		validation.Field(&m.Code,
+			validation.When(m.Code != "", validation.Length(1, 100).Error("SKU 商品编码长度不能大于 {{.max}} 个字符")),
+		),
+		validation.Field(&m.Value, validation.When(m.Value.Valid, validation.Min(0.0).Error("SKU 单价不能小于 {{.min}}"))),
 		validation.Field(&m.CurrencyCode,
-			validation.Required.Error("币种代码不能为空"),
-			validation.In("USD", "CAD", "HKD", "CNY").Error("无效的币种代码"),
+			validation.When(m.CurrencyCode != "",
+				is.CurrencyCode.ErrorObject(
+					validation.NewError(
+						"422",
+						"无效的币种代码 {{.value}}").
+						SetParams(map[string]any{"value": m.CurrencyCode}),
+				),
+			),
 		),
 	)
 }
@@ -68,7 +92,7 @@ type CreateOrderPackageInformation struct {
 	Value            Value                     `json:"value"`            // 该项费用的总额和币种
 	CustomerName     string                    `json:"customerName"`     // 上游的客户名，如对接系统为ERP传入海外仓名
 	StoreName        string                    `json:"storeName"`        // 电商平台店铺名
-	SkuList          []CreateOrderPackageGoods `json:"skuList"`          // SKU列表（序列化后的JSON长度不应超过8192字符）
+	SkuList          []CreateOrderPackageGoods `json:"skuList"`          // SKU 列表（序列化后的JSON长度不应超过 8192 字符）
 }
 
 // Validate 包裹信息验证
@@ -105,14 +129,14 @@ func (m CreateOrderPackageInformation) Validate() error {
 	)
 }
 
-// InsuranceServiceConfig 保险服务配置
-type InsuranceServiceConfig struct {
+// InsuranceService 保险服务配置
+type InsuranceService struct {
 	IsInsured    bool  `json:"isInsured"`    // 是否投保
 	InsuredValue Value `json:"insuredValue"` // 该项费用的总额和币种
 }
 
 // Validate 保险服务配置验证
-func (m InsuranceServiceConfig) Validate() error {
+func (m InsuranceService) Validate() error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.InsuredValue, validation.When(m.IsInsured, validation.By(func(value interface{}) error {
 			v, ok := value.(Value)
@@ -124,34 +148,39 @@ func (m InsuranceServiceConfig) Validate() error {
 	)
 }
 
-// PickupServiceConfig 揽收服务配置
-type PickupServiceConfig struct {
+// PickupService 揽收服务配置
+type PickupService struct {
 	IsPickup    bool   `json:"isPickup"`    // 是否揽收
 	PickupStart string `json:"pickupStart"` // 揽收开始时间
 	PickupEnd   string `json:"pickupEnd"`   // 揽收结束时间
 }
 
 // Validate 揽收服务配置验证
-func (m PickupServiceConfig) Validate() error {
+func (m PickupService) Validate() error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.PickupStart, validation.When(m.IsPickup, validation.Required.Error("揽收开始时间不能为空"))),
 		validation.Field(&m.PickupEnd, validation.When(m.IsPickup, validation.Required.Error("揽收结束时间不能为空"))),
 	)
 }
 
-// ShippingLabelInfoConfig 运单印刷数据
-type ShippingLabelInfoConfig struct {
-	OrderNumber               string `json:"orderNumber"`               // 上游订单号，印刷的时候会加上 "Order: " 前缀
-	CustomerNote              string `json:"customerNote"`              // 客户备注，最多 80 个字符，会印刷到快递面单上，印刷的时候会加上 "Customer note: " 前缀
-	ExtSortingCode            string `json:"extSortingCode"`            // 外部分拣码
-	UseExternalTrackingNumber bool   `json:"useExternalTrackingNumber"` // 是否使用外部面单号
-	ExternalTrackingNumber    string `json:"externalTrackingNumber"`    // 外部面单号
+// ShippingLabelInformation 运单印刷数据
+type ShippingLabelInformation struct {
+	OrderNumber               string `json:"orderNumber"`                      // 上游订单号，印刷的时候会加上 "Order: " 前缀
+	CustomerNote              string `json:"customerNote,omitempty"`           // 客户备注，最多 80 个字符，会印刷到快递面单上，印刷的时候会加上 "Customer note: " 前缀
+	ExtSortingCode            string `json:"extSortingCode,omitempty"`         // 外部分拣码
+	UseExternalTrackingNumber bool   `json:"useExternalTrackingNumber"`        // 是否使用外部面单号
+	ExternalTrackingNumber    string `json:"externalTrackingNumber,omitempty"` // 外部面单号
 }
 
 // Validate 运单印刷数据验证
-func (m ShippingLabelInfoConfig) Validate() error {
+func (m ShippingLabelInformation) Validate() error {
 	return validation.ValidateStruct(&m,
+		validation.Field(&m.OrderNumber,
+			validation.Required.Error("订单号不能为空"),
+			validation.Length(1, 128).Error("订单号不能超过 {{.max}} 个字符")),
 		validation.Field(&m.CustomerNote, validation.When(m.CustomerNote != "", validation.Length(0, 80).Error("客户备注不能超过 {{.max}} 个字符"))),
+		validation.Field(&m.ExtSortingCode, validation.When(m.ExtSortingCode != "", validation.Length(0, 128).Error("外部分拣码不能超过 {{.max}} 个字符"))),
+		validation.Field(&m.ExternalTrackingNumber, validation.When(m.UseExternalTrackingNumber, validation.Length(0, 64).Error("外部面单号不能超过 {{.max}} 个字符"))),
 	)
 }
 
@@ -164,15 +193,15 @@ type CreateOrderRequest struct {
 	EntryPostalCode   string                        `json:"entryPostalCode"`   // 交邮点邮编，默认留空，使用场景需联系商务支持
 	ReferenceNo       string                        `json:"referenceNo"`       // 引用单号，默认留空，使用场景需联系商务支持
 	SelfPickupCode    string                        `json:"selfPickupCode"`    // 自提码，如果送货方式为自提时必填
-	InsuranceService  InsuranceServiceConfig        `json:"insuranceService"`  // 保险服务配置
-	PickupService     PickupServiceConfig           `json:"pickupService"`     // 揽收服务配置
+	InsuranceService  InsuranceService              `json:"insuranceService"`  // 保险服务配置
+	PickupService     PickupService                 `json:"pickupService"`     // 揽收服务配置
 	PackageInfo       CreateOrderPackageInformation `json:"packageInfo"`       // 包裹信息
-	ShippingLabelInfo ShippingLabelInfoConfig       `json:"shippingLabelInfo"` // 运单印刷数据
+	ShippingLabelInfo ShippingLabelInformation      `json:"shippingLabelInfo"` // 运单印刷数据
 	ExtraInfo         struct {
 		Platform  string `json:"platform"`
 		Priority  string `json:"priority"`
 		Warehouse string `json:"warehouse"`
-	} `json:"extraInfo"` // 额外信息,字段可由客户自行扩展，对应字符串长度小于4096个字符
+	} `json:"extraInfo"` // 额外信息,字段可由客户自行扩展，对应字符串长度小于 4096 个字符
 }
 
 func (m CreateOrderRequest) Validate() error {
@@ -197,14 +226,14 @@ func (m CreateOrderRequest) Validate() error {
 			validation.When(m.DeliveryMethod == "SPU", validation.Required.Error("自提码不能为空")),
 		),
 		validation.Field(&m.InsuranceService, validation.By(func(value interface{}) error {
-			v, ok := value.(InsuranceServiceConfig)
+			v, ok := value.(InsuranceService)
 			if !ok {
 				return errors.New("无效的保险服务配置")
 			}
 			return v.Validate()
 		})),
 		validation.Field(&m.PickupService, validation.By(func(value interface{}) error {
-			v, ok := value.(PickupServiceConfig)
+			v, ok := value.(PickupService)
 			if !ok {
 				return errors.New("无效的揽收服务配置")
 			}
@@ -218,7 +247,7 @@ func (m CreateOrderRequest) Validate() error {
 			return v.Validate()
 		})),
 		validation.Field(&m.ShippingLabelInfo, validation.By(func(value interface{}) error {
-			v, ok := value.(ShippingLabelInfoConfig)
+			v, ok := value.(ShippingLabelInformation)
 			if !ok {
 				return errors.New("无效的运单印刷数据")
 			}
