@@ -82,7 +82,7 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 	}
 }
 
-func NewClient(ctx context.Context, cfg config.Config) *Client {
+func NewClient(cfg config.Config) *Client {
 	l := createLogger()
 	debug := cfg.Debug
 	if cfg.Logger != nil {

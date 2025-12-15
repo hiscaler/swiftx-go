@@ -1,7 +1,6 @@
 package swiftx
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 )
 
 var client *Client
-var ctx context.Context
 
 func TestMain(m *testing.M) {
 	b, err := os.ReadFile("./config/config.json")
@@ -24,7 +22,6 @@ func TestMain(m *testing.M) {
 		panic(fmt.Sprintf("Parse config file error: %s", err.Error()))
 	}
 
-	client = NewClient(ctx, cfg)
-	ctx = context.Background()
+	client = NewClient(cfg)
 	m.Run()
 }
