@@ -15,7 +15,7 @@ func (s pingService) Pong(ctx context.Context, i int) (int, error) {
 		SetContext(ctx).
 		SetQueryParam("i", strconv.Itoa(i)).
 		SetResult(&res).
-		Post("/pingPong")
+		Get("/pingPong")
 	if err = recheckError(resp, err); err != nil {
 		return 0, err
 	}

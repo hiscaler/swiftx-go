@@ -72,7 +72,7 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 		nonce,
 		contentSHA256,
 		httpMethod,
-		strings.ToLower(apiPath),
+		apiPath,
 		queryString,
 	)
 
@@ -119,7 +119,7 @@ func NewClient(cfg config.Config) *Client {
 			if err != nil {
 				return err
 			}
-			sign := buildSignature(cfg.AppKey, cfg.AppSecret, request.Method, u.Path, request.QueryParam.Encode(), request.Body)
+			sign := buildSignature(cfg.AppKey, cfg.AppSecret, request.Method, "/api/v2/openapi"+u.Path, request.QueryParam.Encode(), request.Body)
 			request.SetHeaders(map[string]string{
 				"X-Timestamp":      strconv.Itoa(int(sign.timestamp)),
 				"X-Nonce":          sign.nonce,
