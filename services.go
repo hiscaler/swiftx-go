@@ -16,4 +16,5 @@ type service struct {
 // API Services
 type services struct {
 	Order orderService // 订单服务
+	Ping  pingService  // Ping 服务
 }

@@ -1,16 +1,16 @@
 package swiftx
 
 import (
-	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,35 +50,42 @@ type signature struct {
 // 签名格式：{app_key}\n{timestamp}\n{nonce}\n{content_sha256}\n{http_method}\n{path}\n{query_string}
 func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, requestBody any) signature {
 	timestamp := time.Now().Unix()
-	nonce := strconv.Itoa(int(time.Now().UnixNano()))
-	// 计算数据哈希值
-	data := []byte(fmt.Sprintf(`%s
-%s
-%s
-%s
-%s`, appKey, appSecret, httpMethod, apiPath, queryString))
+	nonceBytes := make([]byte, 16)
+	if _, err := rand.Read(nonceBytes); err != nil {
+		panic("failed to generate random nonce: " + err.Error())
+	}
+	nonce := hex.EncodeToString(nonceBytes)
+
+	// 计算 requestBody 的 SHA256 哈希值
+	var bodyBytes []byte
+	if requestBody != nil {
+		bodyBytes, _ = json.Marshal(requestBody)
+	}
 	hasher := sha256.New()
-	hasher.Write(data)
-	hashBytes := hasher.Sum(nil)
-	contentSHA256 := hex.EncodeToString(hashBytes)
+	hasher.Write(bodyBytes)
+	contentSHA256 := hex.EncodeToString(hasher.Sum(nil))
+
+	// 构建待签名字符串
+	stringToSign := fmt.Sprintf("%s\n%d\n%s\n%s\n%s\n%s\n%s",
+		appKey,
+		timestamp,
+		nonce,
+		contentSHA256,
+		httpMethod,
+		strings.ToLower(apiPath),
+		queryString,
+	)
 
 	// 计算签名
-	secretKey := []byte(appKey)
-	h := hmac.New(sha256.New, secretKey)
-	h.Write([]byte(fmt.Sprintf(`%s
-%d
-%s
-%s
-%s
-%s
-%s
-`, appKey, timestamp, nonce, contentSHA256, httpMethod, apiPath, queryString)))
-	sign := h.Sum(nil)
+	h := hmac.New(sha256.New, []byte(appSecret))
+	h.Write([]byte(stringToSign))
+	sign := hex.EncodeToString(h.Sum(nil))
+
 	return signature{
 		timestamp:     timestamp,
-		nonce:         strconv.Itoa(int(time.Now().UnixNano())),
+		nonce:         nonce,
 		contentSHA256: contentSHA256,
-		signature:     hex.EncodeToString(sign),
+		signature:     sign,
 	}
 }
 
@@ -108,7 +115,11 @@ func NewClient(cfg config.Config) *Client {
 		}).
 		SetTimeout(time.Duration(cfg.Timeout) * time.Second).
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
-			sign := buildSignature(cfg.AppKey, cfg.AppSecret, request.Method, request.URL, request.QueryParam.Encode(), request.Body)
+			u, err := url.Parse(request.URL)
+			if err != nil {
+				return err
+			}
+			sign := buildSignature(cfg.AppKey, cfg.AppSecret, request.Method, u.Path, request.QueryParam.Encode(), request.Body)
 			request.SetHeaders(map[string]string{
 				"X-Timestamp":      strconv.Itoa(int(sign.timestamp)),
 				"X-Nonce":          sign.nonce,
@@ -121,7 +132,7 @@ func NewClient(cfg config.Config) *Client {
 		SetRetryWaitTime(2 * time.Second).
 		SetRetryMaxWaitTime(5 * time.Second).
 		AddRetryCondition(func(response *resty.Response, err error) bool {
-			if response == nil || response.Body() == nil {
+			if response != nil && response.StatusCode() == http.StatusTooManyRequests {
 				return true
 			}
 			return false
@@ -134,6 +145,7 @@ func NewClient(cfg config.Config) *Client {
 	}
 	swiftxClient.Services = services{
 		Order: (orderService)(xService),
+		Ping:  (pingService)(xService),
 	}
 	return swiftxClient
 }
