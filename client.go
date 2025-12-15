@@ -34,6 +34,7 @@ const (
 
 type Client struct {
 	config     *config.Config // 配置
+	logger     *slog.Logger   // Logger
 	httpClient *resty.Client  // Resty Client
 	Services   services       // API Services
 }
@@ -82,16 +83,22 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 }
 
 func NewClient(ctx context.Context, cfg config.Config) *Client {
-	logger := log.New(os.Stdout, "[ Client ] ", log.LstdFlags|log.Llongfile)
+	l := createLogger()
+	debug := cfg.Debug
+	if cfg.Logger != nil {
+		l.l = cfg.Logger
+	}
+
 	swiftxClient := &Client{
 		config: &cfg,
+		logger: l.l,
 	}
 	baseUrl := ProdBaseUrl
 	if cfg.Env != entity.Prod {
 		baseUrl = TestBaseUrl
 	}
 	httpClient := resty.New().
-		SetDebug(cfg.Debug).
+		SetDebug(debug).
 		SetBaseURL(baseUrl).
 		SetHeaders(map[string]string{
 			"Content-Type": "application/json",
@@ -122,7 +129,7 @@ func NewClient(ctx context.Context, cfg config.Config) *Client {
 	swiftxClient.httpClient = httpClient
 	xService := service{
 		config:     &cfg,
-		logger:     logger,
+		logger:     l.l,
 		httpClient: swiftxClient.httpClient,
 	}
 	swiftxClient.Services = services{

@@ -1,7 +1,7 @@
 package swiftx
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hiscaler/swiftx-go/config"
@@ -9,7 +9,7 @@ import (
 
 type service struct {
 	config     *config.Config // Config
-	logger     *log.Logger    // Logger
+	logger     *slog.Logger   // Logger
 	httpClient *resty.Client  // HTTP client
 }
 
