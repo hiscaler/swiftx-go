@@ -105,18 +105,24 @@ func (m CreateOrderPackageInformation) Validate() error {
 			}
 			return address.Validate()
 		})),
-		validation.Field(&m.RecipientAddress, validation.Required.Error("发货地址不能为空"), validation.By(func(value interface{}) error {
+		validation.Field(&m.RecipientAddress, validation.Required.Error("收货地址不能为空"), validation.By(func(value interface{}) error {
 			address, ok := value.(RecipientAddress)
 			if !ok {
 				return errors.New("无效的收货地址")
 			}
-			return address.Validate()
+			if err := address.Validate(); err != nil {
+				return err
+			}
+			if address.PhoneNumber == "" {
+				return errors.New("收货地址的电话号码不能为空")
+			}
+			return nil
 		})),
 		validation.Field(&m.Weight, validation.Required.Error("重量不能为空"), validation.Min(0.0).Error("重量不能小于 0")),
 		validation.Field(&m.Length, validation.Required.Error("长度不能为空"), validation.Min(0).Error("长度不能小于 0")),
 		validation.Field(&m.Width, validation.Required.Error("宽度不能为空"), validation.Min(0).Error("宽度不能小于 0")),
 		validation.Field(&m.Height, validation.Required.Error("高度不能为空"), validation.Min(0.0).Error("高度不能小于 0")),
-		validation.Field(&m.Value, validation.Required.Error("费用不能为空"), validation.By(func(value interface{}) error {
+		validation.Field(&m.Value, validation.Required.Error("总费用不能为空"), validation.By(func(value interface{}) error {
 			v, ok := value.(Value)
 			if !ok {
 				return errors.New("无效的费用")
@@ -193,7 +199,7 @@ type CreateOrderRequest struct {
 	EntryPostalCode   string                        `json:"entryPostalCode"`   // 交邮点邮编，默认留空，使用场景需联系商务支持
 	ReferenceNo       string                        `json:"referenceNo"`       // 引用单号，默认留空，使用场景需联系商务支持
 	SelfPickupCode    string                        `json:"selfPickupCode"`    // 自提码，如果送货方式为自提时必填
-	InsuranceService  InsuranceService              `json:"insuranceService"`  // 保险服务配置
+	InsuranceService  *InsuranceService             `json:"insuranceService"`  // 保险服务配置
 	PickupService     PickupService                 `json:"pickupService"`     // 揽收服务配置
 	PackageInfo       CreateOrderPackageInformation `json:"packageInfo"`       // 包裹信息
 	ShippingLabelInfo ShippingLabelInformation      `json:"shippingLabelInfo"` // 运单印刷数据
@@ -225,13 +231,13 @@ func (m CreateOrderRequest) Validate() error {
 		validation.Field(&m.SelfPickupCode,
 			validation.When(m.DeliveryMethod == "SPU", validation.Required.Error("自提码不能为空")),
 		),
-		validation.Field(&m.InsuranceService, validation.By(func(value interface{}) error {
-			v, ok := value.(InsuranceService)
+		validation.Field(&m.InsuranceService, validation.When(m.InsuranceService != nil, validation.By(func(value interface{}) error {
+			v, ok := value.(*InsuranceService)
 			if !ok {
 				return errors.New("无效的保险服务配置")
 			}
 			return v.Validate()
-		})),
+		}))),
 		validation.Field(&m.PickupService, validation.By(func(value interface{}) error {
 			v, ok := value.(PickupService)
 			if !ok {
@@ -266,21 +272,19 @@ type CreateOrderResult struct {
 }
 
 // Create 创建订单并获取面单 PDF 的 Base64 编码
-func (s orderService) Create(ctx context.Context, requests []CreateOrderRequest) ([]CreateOrderResult, error) {
-	for _, req := range requests {
-		if err := req.Validate(); err != nil {
-			return nil, invalidInput(err)
-		}
+func (s orderService) Create(ctx context.Context, request CreateOrderRequest) (CreateOrderResult, error) {
+	if err := request.Validate(); err != nil {
+		return CreateOrderResult{}, invalidInput(err)
 	}
 
-	var res []CreateOrderResult
+	var res CreateOrderResult
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
-		SetBody(requests).
+		SetBody(request).
 		SetResult(&res).
 		Post("/createOrderAndGetLabelPdfBase64")
 	if err = recheckError(resp, err); err != nil {
-		return nil, err
+		return CreateOrderResult{}, err
 	}
 	return res, nil
 }
@@ -306,16 +310,16 @@ func (s orderService) Cancel(ctx context.Context, trackingNumber string) (bool, 
 
 // Tracking 查询物流轨迹
 func (s orderService) Tracking(ctx context.Context, trackingNumbers ...string) ([]entity.TrackingResult, error) {
-	var res []entity.TrackingResult
+	var results []entity.TrackingResult
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetBody(map[string][]string{
 			"trackingNoList": trackingNumbers,
 		}).
-		SetResult(&res).
+		SetResult(&results).
 		Post("/batchGetTrackingInfo")
 	if err = recheckError(resp, err); err != nil {
 		return nil, err
 	}
-	return res, nil
+	return results, nil
 }

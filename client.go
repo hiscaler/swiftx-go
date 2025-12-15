@@ -151,9 +151,10 @@ func NewClient(cfg config.Config) *Client {
 }
 
 type NormalResponse struct {
-	Code      int    `json:"code"`
-	Message   string `json:"message"`
-	RequestId string `json:"requestId"`
+	Result struct {
+		Success bool   `json:"success"`
+		Message string `json:"message"`
+	}
 }
 
 // errorWrap 错误包装
@@ -230,13 +231,17 @@ func recheckError(resp *resty.Response, e error) error {
 	}
 
 	if resp.IsError() {
-		var normalResponse NormalResponse
-		err := json.Unmarshal(resp.Body(), &normalResponse)
-		if err != nil {
-			return err
-		}
-		return errorWrap(resp.StatusCode(), normalResponse.Message)
+
+		return errorWrap(resp.StatusCode(), "")
 	}
 
-	return nil
+	var normalResponse NormalResponse
+	err := json.Unmarshal(resp.Body(), &normalResponse)
+	if err != nil {
+		return err
+	}
+	if normalResponse.Result.Success {
+		return nil
+	}
+	return errors.New(normalResponse.Result.Message)
 }
