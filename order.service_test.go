@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/hiscaler/swiftx-go/entity"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -12,19 +13,19 @@ func TestOrderService_Create(t *testing.T) {
 	senderAddress := SenderAddress{
 		RegionCode:    "US",
 		StateProvince: "CA",
-		City:          "Los Angeles",
-		StreetAddress: "123 Main St",
-		PostalCode:    "95134",
-		Name:          "Alice Johnson",
-		PhoneNumber:   "4089876543",
+		City:          "Ontario",
+		StreetAddress: "4317 E Santa Ana St, Unit B",
+		PostalCode:    "91761",
+		Name:          "Sam Chen",
+		PhoneNumber:   "(909) 539-8372",
 	}
 	// 收件人地址信息
 	recipientAddress := RecipientAddress{
 		RegionCode:    "US",
-		StateProvince: "CA",
-		City:          "San Francisco",
-		StreetAddress: "456 Park Ave",
-		PostalCode:    "90039",
+		StateProvince: "CO",
+		City:          "Arvada",
+		StreetAddress: "18148 W 92nd Ln",
+		PostalCode:    "76118",
 		Name:          "John Doe",
 		PhoneNumber:   "4151234567",
 	}
@@ -74,16 +75,19 @@ func TestOrderService_Create(t *testing.T) {
 			OrderNumber: "TEST-ORDER-12345", // 上游订单号
 		},
 	}
-	_, err := client.Services.Order.Create(ctx, req)
+	order, err := client.Services.Order.Create(ctx, req)
 	if err != nil {
 		t.Logf("client.Services.Order.Create() 错误: %v", err) // 打印错误信息
 		t.Fatalf("client.Services.Order.Create() 失败: %v", err)
+	} else {
+		assert.NotEmpty(t, order.TrackingNo)
+		assert.NotEmpty(t, order.ShippingLabel)
 	}
 }
 
 func TestOrderService_Cancel(t *testing.T) {
 	// 请替换为测试环境中的有效运单号
-	trackingNumber := "SWX784390000000365027"
+	trackingNumber := "SWX475440000011278280"
 	success, err := client.Services.Order.Cancel(ctx, trackingNumber)
 	if err != nil {
 		t.Fatalf("client.Services.Order.Cancel() 错误: %v", err)

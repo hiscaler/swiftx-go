@@ -7,6 +7,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/hiscaler/swiftx-go/entity"
+	"github.com/hiscaler/swiftx-go/response"
 	"gopkg.in/guregu/null.v4"
 )
 
@@ -272,9 +273,9 @@ type CreateOrderResult struct {
 }
 
 // Create 创建订单并获取面单 PDF 的 Base64 编码
-func (s orderService) Create(ctx context.Context, request CreateOrderRequest) (CreateOrderResult, error) {
+func (s orderService) Create(ctx context.Context, request CreateOrderRequest) (entity.Order, error) {
 	if err := request.Validate(); err != nil {
-		return CreateOrderResult{}, invalidInput(err)
+		return entity.Order{}, invalidInput(err)
 	}
 
 	var res CreateOrderResult
@@ -284,17 +285,21 @@ func (s orderService) Create(ctx context.Context, request CreateOrderRequest) (C
 		SetResult(&res).
 		Post("/createOrderAndGetLabelPdfBase64")
 	if err = recheckError(resp, err); err != nil {
-		return CreateOrderResult{}, err
+		return entity.Order{}, err
 	}
-	return res, nil
+	if !res.Result.Success {
+		return entity.Order{}, errors.New(res.Result.Message)
+	}
+	return entity.Order{
+		CustomerOrderNumber: request.ShippingLabelInfo.OrderNumber,
+		TrackingNo:          res.TrackingNo,
+		ShippingLabel:       res.PdfBase64,
+	}, nil
 }
 
 // Cancel 取消订单，仅支持未揽收的订单
 func (s orderService) Cancel(ctx context.Context, trackingNumber string) (bool, error) {
-	var res struct {
-		Success bool   `json:"success"`
-		Message string `json:"message"`
-	}
+	var res response.Result
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetBody(map[string]string{
@@ -305,7 +310,10 @@ func (s orderService) Cancel(ctx context.Context, trackingNumber string) (bool, 
 	if err = recheckError(resp, err); err != nil {
 		return false, err
 	}
-	return res.Success, nil
+	if !res.Success {
+		return false, errors.New(res.Message)
+	}
+	return true, nil
 }
 
 // Tracking 查询物流轨迹

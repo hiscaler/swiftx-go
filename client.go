@@ -20,6 +20,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hiscaler/swiftx-go/config"
 	"github.com/hiscaler/swiftx-go/entity"
+	"github.com/hiscaler/swiftx-go/response"
 )
 
 const (
@@ -150,13 +151,6 @@ func NewClient(cfg config.Config) *Client {
 	return swiftxClient
 }
 
-type NormalResponse struct {
-	Result struct {
-		Success bool   `json:"success"`
-		Message string `json:"message"`
-	}
-}
-
 // errorWrap 错误包装
 func errorWrap(code int, message string) error {
 	if code == http.StatusOK {
@@ -230,12 +224,15 @@ func recheckError(resp *resty.Response, e error) error {
 		return e
 	}
 
-	if resp.IsError() {
+	if resp.IsSuccess() {
+		return nil
+	}
 
+	if resp.IsError() {
 		return errorWrap(resp.StatusCode(), "")
 	}
 
-	var normalResponse NormalResponse
+	var normalResponse response.NormalResponse
 	err := json.Unmarshal(resp.Body(), &normalResponse)
 	if err != nil {
 		return err
