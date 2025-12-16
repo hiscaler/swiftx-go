@@ -81,14 +81,14 @@ func TestOrderService_Create(t *testing.T) {
 		t.Fatalf("client.Services.Order.Create() 失败: %v", err)
 	} else {
 		assert.Equal(t, req.ShippingLabelInfo.OrderNumber, order.CustomerOrderNumber)
-		assert.NotEmpty(t, order.TrackingNo)
+		assert.NotEmpty(t, order.ShipmentNumber)
 		assert.NotEmpty(t, order.ShippingLabel)
 	}
 }
 
 func TestOrderService_Cancel(t *testing.T) {
-	trackingNumber := "SWX475440000011278280"
-	success, err := client.Services.Order.Cancel(ctx, trackingNumber)
+	shipmentNumber := "SWX475440000011278280"
+	success, err := client.Services.Order.Cancel(ctx, shipmentNumber)
 	if err != nil {
 		t.Fatalf("client.Services.Order.Cancel() 错误: %v", err)
 	}
@@ -99,8 +99,8 @@ func TestOrderService_Cancel(t *testing.T) {
 
 func TestOrderService_Tracking(t *testing.T) {
 	// 请替换为测试环境中的有效运单号
-	trackingNumber := "SWX784390000000365027"
-	results, err := client.Services.Order.Tracking(ctx, trackingNumber)
+	shipmentNumber := "SWX852250000011278331"
+	results, err := client.Services.Order.Tracking(ctx, shipmentNumber)
 	if err != nil {
 		t.Fatalf("client.Services.Order.Tracking() 错误: %v", err)
 	}

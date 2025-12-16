@@ -268,8 +268,9 @@ type CreateOrderResult struct {
 		Success bool   `json:"success"`
 		Message string `json:"message"`
 	} `json:"result"`
-	TrackingNo string `json:"trackingNo"`
-	PdfBase64  string `json:"pdfBase64"`
+	TrackingNo             string      `json:"trackingNo"`
+	ExternalTrackingNumber null.String `json:"externalTrackingNumber,omitempty"` // 合作方跟踪号
+	PdfBase64              string      `json:"pdfBase64"`
 }
 
 // Create 创建订单并获取面单 PDF 的 Base64 编码
@@ -292,18 +293,19 @@ func (s orderService) Create(ctx context.Context, request CreateOrderRequest) (e
 	}
 	return entity.Order{
 		CustomerOrderNumber: request.ShippingLabelInfo.OrderNumber,
-		TrackingNo:          res.TrackingNo,
+		ShipmentNumber:      res.TrackingNo,
+		TrackingNumber:      res.ExternalTrackingNumber,
 		ShippingLabel:       res.PdfBase64,
 	}, nil
 }
 
 // Cancel 取消订单，仅支持未揽收的订单
-func (s orderService) Cancel(ctx context.Context, trackingNumber string) (bool, error) {
+func (s orderService) Cancel(ctx context.Context, shipmentNumber string) (bool, error) {
 	var res response.Result
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetBody(map[string]string{
-			"trackingNo": trackingNumber,
+			"trackingNo": shipmentNumber,
 		}).
 		SetResult(&res).
 		Post("/cancelOrder")
@@ -317,12 +319,12 @@ func (s orderService) Cancel(ctx context.Context, trackingNumber string) (bool, 
 }
 
 // Tracking 查询物流轨迹
-func (s orderService) Tracking(ctx context.Context, trackingNumbers ...string) ([]entity.TrackingResult, error) {
+func (s orderService) Tracking(ctx context.Context, shipmentNumbers ...string) ([]entity.TrackingResult, error) {
 	var results []entity.TrackingResult
 	resp, err := s.httpClient.R().
 		SetContext(ctx).
 		SetBody(map[string][]string{
-			"trackingNoList": trackingNumbers,
+			"trackingNoList": shipmentNumbers,
 		}).
 		SetResult(&results).
 		Post("/batchGetTrackingInfo")
