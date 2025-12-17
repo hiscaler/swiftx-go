@@ -49,11 +49,11 @@ type signature struct {
 
 // buildSignature 构建签名
 // 签名格式：{app_key}\n{timestamp}\n{nonce}\n{content_sha256}\n{http_method}\n{path}\n{query_string}
-func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, requestBody any) signature {
+func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, requestBody any) (signature, error) {
 	timestamp := time.Now().Unix()
 	nonceBytes := make([]byte, 16)
 	if _, err := rand.Read(nonceBytes); err != nil {
-		panic("failed to generate random nonce: " + err.Error())
+		return signature{}, fmt.Errorf("failed to generate random nonce: " + err.Error())
 	}
 	nonce := hex.EncodeToString(nonceBytes)
 
@@ -87,7 +87,7 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 		nonce:         nonce,
 		contentSHA256: contentSHA256,
 		signature:     sign,
-	}
+	}, nil
 }
 
 func NewClient(cfg config.Config) *Client {
@@ -118,15 +118,22 @@ func NewClient(cfg config.Config) *Client {
 		OnBeforeRequest(func(client *resty.Client, request *resty.Request) error {
 			u, err := url.Parse(request.URL)
 			if err != nil {
+				l.l.Error("request url parse", "error", err)
 				return err
 			}
-			sign := buildSignature(cfg.AppKey, cfg.AppSecret, request.Method, "/api/v2/openapi"+u.Path, request.QueryParam.Encode(), request.Body)
+			sign, err := buildSignature(cfg.AppKey, cfg.AppSecret, request.Method, "/api/v2/openapi"+u.Path, request.QueryParam.Encode(), request.Body)
+			if err != nil {
+				l.l.Error("signature build", "error", err)
+				return err
+			}
+
 			request.SetHeaders(map[string]string{
 				"X-Timestamp":      strconv.Itoa(int(sign.timestamp)),
 				"X-Nonce":          sign.nonce,
 				"X-Content-SHA256": sign.contentSHA256,
 				"X-Signature":      sign.signature,
 			})
+
 			return nil
 		}).
 		SetRetryCount(2).
@@ -138,6 +145,9 @@ func NewClient(cfg config.Config) *Client {
 			}
 			return false
 		})
+	if debug {
+		httpClient.EnableTrace()
+	}
 	swiftxClient.httpClient = httpClient
 	xService := service{
 		config:     &cfg,
