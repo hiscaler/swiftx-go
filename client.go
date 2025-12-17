@@ -130,8 +130,8 @@ func NewClient(cfg config.Config) *Client {
 			return nil
 		}).
 		SetRetryCount(2).
-		SetRetryWaitTime(2 * time.Second).
-		SetRetryMaxWaitTime(5 * time.Second).
+		SetRetryWaitTime(1 * time.Second).
+		SetRetryMaxWaitTime(2 * time.Second).
 		AddRetryCondition(func(response *resty.Response, err error) bool {
 			if response != nil && response.StatusCode() == http.StatusTooManyRequests {
 				return true
