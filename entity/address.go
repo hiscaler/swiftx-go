@@ -30,7 +30,7 @@ func (m Address) Validate() error {
 		validation.Field(&m.RegionCode, validation.Required.Error("国家代码不能为空"), is.CountryCode2.ErrorObject(validation.NewError("422", "无效的国家代码 {{.value}}").SetParams(map[string]interface{}{"value": m.RegionCode}))),
 		validation.Field(
 			&m.StateProvince,
-			validation.Required.Error("省/州不能为空"),
+			validation.Required.Error("州/省不能为空"),
 			validation.
 				When(
 					m.RegionCode == "US",
@@ -38,12 +38,12 @@ func (m Address) Validate() error {
 						regexp.MustCompile("^[A-Z]{2}$")).
 						ErrorObject(
 							validation.
-								NewError("422", "无效的省/州 {{.value}}").
+								NewError("422", "无效的州/省 {{.value}}").
 								SetParams(map[string]any{"value": m.StateProvince}),
 						),
 				).
 				Else(
-					validation.Length(1, 10).Error("省/州长度不能超过 {{.max}} 个字符"),
+					validation.Length(1, 10).Error("州/省长度不能超过 {{.max}} 个字符"),
 				),
 		),
 		validation.Field(&m.City, validation.Required.Error("城市不能为空"), validation.Length(1, 100).Error("城市长度不能超过 {{.max}}")),
