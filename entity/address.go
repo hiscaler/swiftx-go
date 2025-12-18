@@ -46,10 +46,10 @@ func (m Address) Validate() error {
 					validation.Length(1, 10).Error("州/省长度不能超过 {{.max}} 个字符"),
 				),
 		),
-		validation.Field(&m.City, validation.Required.Error("城市不能为空"), validation.Length(1, 100).Error("城市长度不能超过 {{.max}}")),
+		validation.Field(&m.City, validation.Required.Error("城市不能为空"), validation.Length(1, 100).Error("城市长度不能超过 {{.max}} 个字符")),
 		validation.Field(&m.District, validation.When(m.District != "", validation.Length(0, 100).Error("区域/县长度不能超过 {{.max}} 个字符"))),
 		validation.Field(&m.StreetAddress, validation.Required.Error("街道地址不能为空"), validation.Length(0, 255).Error("街道地址长度不能超过 {{.max}} 个字符")),
 		validation.Field(&m.Building, validation.When(m.Building != "", validation.Length(0, 255).Error("建筑物名称长度不能超过 {{.max}} 个字符"))),
-		validation.Field(&m.PostalCode, validation.Required.Error("邮编不能为空"), validation.Length(1, 10).ErrorObject(validation.NewError("422", "邮编长度不能大于 {{.max}}"))),
+		validation.Field(&m.PostalCode, validation.Required.Error("邮编不能为空"), validation.Length(1, 10).ErrorObject(validation.NewError("422", "邮编长度不能大于 {{.max}} 个字符"))),
 	)
 }
