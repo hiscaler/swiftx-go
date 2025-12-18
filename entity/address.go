@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"regexp"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 )
@@ -12,7 +14,7 @@ type Address struct {
 	PhoneNumber      string `json:"phoneNumber,omitempty"`      // 电话号码（寄件人地址可选，收件人地址必填）
 	PhoneExtension   string `json:"phoneExtension,omitempty"`   // 电话分机号
 	RegionCode       string `json:"regionCode"`                 // 国家编码，类似US、CN（Enum: "US" "CA" "CN"）
-	StateProvince    string `json:"stateProvince"`              // 州/省（美国州请使用2字母缩写，如CA、NY）
+	StateProvince    string `json:"stateProvince"`              // 省/州（美国州请使用2字母缩写，如CA、NY）
 	City             string `json:"city"`                       // 城市
 	District         string `json:"district,omitempty"`         // 区域/县，对应美国地址的county
 	StreetAddress    string `json:"streetAddress"`              // 街道地址，对应美国地址的address line 1
@@ -24,9 +26,26 @@ type Address struct {
 func (m Address) Validate() error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.Name, validation.Required.Error("姓名不能为空"), validation.Length(1, 100).Error("姓名长度不能超过 {{.max}} 个字符")),
-		validation.Field(&m.PhoneNumber, validation.Length(0, 50).Error("电话号码长度不能超过 {{.max}} 个字符")),
+		validation.Field(&m.PhoneNumber, validation.When(m.PhoneNumber != "", validation.Length(1, 50).Error("电话号码长度不能超过 {{.max}} 个字符"))),
 		validation.Field(&m.RegionCode, validation.Required.Error("国家代码不能为空"), is.CountryCode2.ErrorObject(validation.NewError("422", "无效的国家代码 {{.value}}").SetParams(map[string]interface{}{"value": m.RegionCode}))),
-		validation.Field(&m.StateProvince, validation.Required.Error("州/省不能为空"), validation.Length(2, 2).ErrorObject(validation.NewError("422", "无效的州/省 {{.value}}").SetParams(map[string]interface{}{"value": m.StateProvince}))),
+		validation.Field(
+			&m.StateProvince,
+			validation.Required.Error("省/州不能为空"),
+			validation.
+				When(
+					m.RegionCode == "US",
+					validation.Match(
+						regexp.MustCompile("^[A-Z]{2}$")).
+						ErrorObject(
+							validation.
+								NewError("422", "无效的省/州 {{.value}}").
+								SetParams(map[string]any{"value": m.StateProvince}),
+						),
+				).
+				Else(
+					validation.Length(1, 10).Error("省/州长度不能超过 {{.max}} 个字符"),
+				),
+		),
 		validation.Field(&m.City, validation.Required.Error("城市不能为空"), validation.Length(1, 100).Error("城市长度不能超过 {{.max}}")),
 		validation.Field(&m.District, validation.When(m.District != "", validation.Length(0, 100).Error("区域/县长度不能超过 {{.max}} 个字符"))),
 		validation.Field(&m.StreetAddress, validation.Required.Error("街道地址不能为空"), validation.Length(0, 255).Error("街道地址长度不能超过 {{.max}} 个字符")),
