@@ -120,8 +120,8 @@ func (m CreateOrderPackageInformation) Validate() error {
 			return nil
 		})),
 		validation.Field(&m.Weight, validation.Required.Error("重量不能为空"), validation.Min(0.0).Error("重量不能小于 0")),
-		validation.Field(&m.Length, validation.Required.Error("长度不能为空"), validation.Min(0).Error("长度不能小于 0")),
-		validation.Field(&m.Width, validation.Required.Error("宽度不能为空"), validation.Min(0).Error("宽度不能小于 0")),
+		validation.Field(&m.Length, validation.Required.Error("长度不能为空"), validation.Min(0.0).Error("长度不能小于 0")),
+		validation.Field(&m.Width, validation.Required.Error("宽度不能为空"), validation.Min(0.0).Error("宽度不能小于 0")),
 		validation.Field(&m.Height, validation.Required.Error("高度不能为空"), validation.Min(0.0).Error("高度不能小于 0")),
 		validation.Field(&m.Value, validation.Required.Error("总费用不能为空"), validation.By(func(value interface{}) error {
 			v, ok := value.(Value)
