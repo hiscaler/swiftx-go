@@ -31,7 +31,7 @@ func (m Value) Validate() error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.Amount,
 			validation.Required.Error("金额不能为空"),
-			validation.Min(0.0).Error("金额不能小于0"),
+			validation.Min(0.0).Error("金额不能小于 0"),
 		),
 		validation.Field(&m.CurrencyCode,
 			validation.Required.Error("币种代码不能为空"),
@@ -87,8 +87,8 @@ type CreateOrderPackageInformation struct {
 	RecipientAddress RecipientAddress          `json:"recipientAddress"` // 地址信息。注意：电话号码对于收件人地址是必填的。
 	UseImperialUnit  bool                      `json:"useImperialUnit"`  // 是否使用英制单位，默认值false表示使用公制单位
 	Weight           float64                   `json:"weight"`           // 重量(磅/公斤)
-	Length           int                       `json:"length"`           // 长度(英寸/厘米)
-	Width            int                       `json:"width"`            // 宽度(英寸/厘米)
+	Length           float64                   `json:"length"`           // 长度(英寸/厘米)
+	Width            float64                   `json:"width"`            // 宽度(英寸/厘米)
 	Height           float64                   `json:"height"`           // 高度(英寸/厘米)
 	Value            Value                     `json:"value"`            // 该项费用的总额和币种
 	CustomerName     string                    `json:"customerName"`     // 上游的客户名，如对接系统为ERP传入海外仓名
