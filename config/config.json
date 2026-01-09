@@ -2,7 +2,7 @@
   "debug": true,
   "timeout": 10,
   "env": "test",
-  "app_key": "",
-  "app_secret": "",
+  "app_key": "2029b5198e9ac48668a4003c56b81503",
+  "app_secret": "8e13917eb819d9a0a35539c03bd0e490318b57a8bab8c6441e2ce5c5251be1e7",
   "callback_url": "http://localhost:8080/callback"
 }
