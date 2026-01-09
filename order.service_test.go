@@ -14,20 +14,20 @@ func TestOrderService_Create(t *testing.T) {
 		RegionCode:    "US",
 		StateProvince: "CA",
 		City:          "Ontario",
-		StreetAddress: "4317 E Santa Ana St, Unit B",
+		StreetAddress: "2078 E Francis Street",
 		PostalCode:    "91761",
-		Name:          "Sam Chen",
-		PhoneNumber:   "(909) 539-8372",
+		Name:          "ZEB2",
+		PhoneNumber:   "1096398373",
 	}
 	// 收件人地址信息
 	recipientAddress := RecipientAddress{
 		RegionCode:    "US",
-		StateProvince: "CO",
-		City:          "Arvada",
-		StreetAddress: "18148 W 92nd Ln",
+		StateProvince: "TX",
+		City:          "Fort Worth",
+		StreetAddress: "W1302 WELCH RD",
 		PostalCode:    "76118",
-		Name:          "John Doe",
-		PhoneNumber:   "4151234567",
+		Name:          "Dak Jaech",
+		PhoneNumber:   "+1 347-447-3197 ext. 07360",
 	}
 	// 创建订单请求数据
 	req := CreateOrderRequest{
