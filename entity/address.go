@@ -43,7 +43,7 @@ func (m Address) Validate(typ int) error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.Name, validation.Required.Error(typeName+"姓名不能为空"), validation.Length(1, 100).Error("姓名长度不能超过 {{.max}} 个字符")),
 		validation.Field(&m.PhoneNumber, validation.When(m.PhoneNumber != "", validation.Length(1, 50).Error(typeName+"电话号码长度不能超过 {{.max}} 个字符"))),
-		validation.Field(&m.RegionCode, validation.Required.Error(typeName+"国家代码不能为空"), is.CountryCode2.ErrorObject(validation.NewError("422", "无效的{{.typeName}}国家代码 {{.value}}").SetParams(map[string]interface{}{"typeName": typeName, "value": m.RegionCode}))),
+		validation.Field(&m.RegionCode, validation.Required.Error(typeName+"国家二位简码不能为空"), is.CountryCode2.ErrorObject(validation.NewError("422", "无效的{{.typeName}}国家二位简码 {{.value}}").SetParams(map[string]interface{}{"typeName": typeName, "value": m.RegionCode}))),
 		validation.Field(
 			&m.StateProvince,
 			validation.Required.Error(typeName+"州/省不能为空"),
