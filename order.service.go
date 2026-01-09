@@ -104,14 +104,14 @@ func (m CreateOrderPackageInformation) Validate() error {
 			if !ok {
 				return errors.New("无效的发货地址")
 			}
-			return address.Validate()
+			return address.Validate(entity.AddressTypeSender)
 		})),
 		validation.Field(&m.RecipientAddress, validation.Required.Error("收货地址不能为空"), validation.By(func(value interface{}) error {
 			address, ok := value.(RecipientAddress)
 			if !ok {
 				return errors.New("无效的收货地址")
 			}
-			if err := address.Validate(); err != nil {
+			if err := address.Validate(entity.AddressTypeRecipient); err != nil {
 				return err
 			}
 			if address.PhoneNumber == "" {
