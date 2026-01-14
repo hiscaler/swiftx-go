@@ -2,7 +2,13 @@
 
 [API 文档](https://open.swiftx-express.com/)
 
-## SwiftX邮编覆盖总表_251215_海外仓版
+### 测试账号
+
+App Key: 2029b5198e9ac48668a4003c56b81503
+
+App Secret: 8e13917eb819d9a0a35539c03bd0e490318b57a8bab8c6441e2ce5c5251be1e7
+
+## SwiftX邮编覆盖总表_251215_海外仓版【废弃，参考 docs 目录下的文档】
 
 https://www.kdocs.cn/l/ck9uqAf4OVTk
 

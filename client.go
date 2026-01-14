@@ -56,7 +56,6 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 		return signature{}, fmt.Errorf("failed to generate random nonce: " + err.Error())
 	}
 	nonce := hex.EncodeToString(nonceBytes)
-
 	// 计算 requestBody 的 SHA256 哈希值
 	var bodyBytes []byte
 	if requestBody != nil {
@@ -65,7 +64,6 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 	hasher := sha256.New()
 	hasher.Write(bodyBytes)
 	contentSHA256 := hex.EncodeToString(hasher.Sum(nil))
-
 	// 构建待签名字符串
 	stringToSign := fmt.Sprintf("%s\n%d\n%s\n%s\n%s\n%s\n%s",
 		appKey,
@@ -76,7 +74,6 @@ func buildSignature(appKey, appSecret, httpMethod, apiPath, queryString string, 
 		apiPath,
 		queryString,
 	)
-
 	// 计算签名
 	h := hmac.New(sha256.New, []byte(appSecret))
 	h.Write([]byte(stringToSign))
