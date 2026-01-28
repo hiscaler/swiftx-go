@@ -333,3 +333,50 @@ func (s orderService) Tracking(ctx context.Context, shipmentNumbers ...string) (
 	}
 	return results, nil
 }
+
+// Price 获取订单价格
+func (s orderService) Price(ctx context.Context, shipmentNumbers ...string) ([]entity.OrderPrice, error) {
+	var results []struct {
+		Result struct {
+			Success bool   `json:"success"`
+			Message string `json:"message"`
+		} `json:"result"`
+		TrackingNo     string `json:"trackingNo"`
+		ShippingCharge struct {
+			Total struct {
+				Amount       float64 `json:"amount"`
+				CurrencyCode string  `json:"currencyCode"`
+			} `json:"total"`
+			PriceDetail []struct {
+				Cost struct {
+					Amount       float64 `json:"amount"`
+					CurrencyCode string  `json:"currencyCode"`
+				} `json:"cost"`
+				Description string `json:"description"`
+			} `json:"priceDetail"`
+		} `json:"shippingCharge"`
+	}
+	resp, err := s.httpClient.R().
+		SetContext(ctx).
+		SetBody(map[string][]string{
+			"trackingNoList": shipmentNumbers,
+		}).
+		SetResult(&results).
+		Post("/batchGetOrderPrice")
+	if err = recheckError(resp, err); err != nil {
+		return nil, err
+	}
+
+	prices := make([]entity.OrderPrice, 0)
+	for _, result := range results {
+		prices = append(prices, entity.OrderPrice{
+			TrackingNumber: result.TrackingNo,
+			Amount: entity.Money{
+				CurrencyCode: result.ShippingCharge.Total.CurrencyCode,
+				Amount:       result.ShippingCharge.Total.Amount,
+			},
+			Details: nil,
+		})
+	}
+	return prices, nil
+}
