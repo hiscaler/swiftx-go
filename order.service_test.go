@@ -120,6 +120,6 @@ func TestOrderService_Price(t *testing.T) {
 		t.Error("期望获取到订单价格，但结果为空")
 	} else {
 		assert.Equal(t, shipmentNumber, results[0].TrackingNumber)
-		assert.Greater(t, results[0].Amount.Amount, 0)
+		assert.Greater(t, results[0].Amount.Value, 0.0)
 	}
 }

@@ -373,7 +373,7 @@ func (s orderService) Price(ctx context.Context, shipmentNumbers ...string) ([]e
 			TrackingNumber: result.TrackingNo,
 			Amount: entity.Money{
 				CurrencyCode: result.ShippingCharge.Total.CurrencyCode,
-				Amount:       result.ShippingCharge.Total.Amount,
+				Value:        result.ShippingCharge.Total.Amount,
 			},
 			Details: nil,
 		})

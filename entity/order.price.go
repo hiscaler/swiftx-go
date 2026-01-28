@@ -4,7 +4,7 @@ package entity
 
 type Money struct {
 	CurrencyCode string  `json:"currencyCode"`
-	Amount       float64 `json:"amount"`
+	Value        float64 `json:"value"`
 }
 
 type PriceDetail struct {
