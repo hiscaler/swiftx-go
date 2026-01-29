@@ -264,13 +264,10 @@ func (m CreateOrderRequest) Validate() error {
 }
 
 type CreateOrderResult struct {
-	Result struct {
-		Success bool   `json:"success"`
-		Message string `json:"message"`
-	} `json:"result"`
-	TrackingNo             string      `json:"trackingNo"`
+	response.Result        `json:"result"`
+	TrackingNo             string      `json:"trackingNo"`                       // 跟踪号
 	ExternalTrackingNumber null.String `json:"externalTrackingNumber,omitempty"` // 合作方跟踪号
-	PdfBase64              string      `json:"pdfBase64"`
+	PdfBase64              string      `json:"pdfBase64"`                        // PDF Base64 编码内容
 }
 
 // Create 创建订单并获取面单 PDF 的 Base64 编码

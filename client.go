@@ -239,13 +239,13 @@ func recheckError(resp *resty.Response, e error) error {
 		return errorWrap(resp.StatusCode(), "")
 	}
 
-	var normalResponse response.NormalResponse
-	err := json.Unmarshal(resp.Body(), &normalResponse)
+	var result response.Result
+	err := json.Unmarshal(resp.Body(), &result)
 	if err != nil {
 		return err
 	}
-	if normalResponse.Result.Success {
+	if result.Success {
 		return nil
 	}
-	return errors.New(normalResponse.Result.Message)
+	return errors.New(result.Message)
 }
