@@ -331,15 +331,12 @@ func (s orderService) Tracking(ctx context.Context, shipmentNumbers ...string) (
 	return results, nil
 }
 
-// Price 获取订单价格
-func (s orderService) Price(ctx context.Context, shipmentNumbers ...string) ([]entity.OrderPrice, error) {
+// Postage 获取订单价格
+func (s orderService) Postage(ctx context.Context, shipmentNumbers ...string) ([]entity.OrderPrice, error) {
 	var results []struct {
-		Result struct {
-			Success bool   `json:"success"`
-			Message string `json:"message"`
-		} `json:"result"`
-		TrackingNo     string `json:"trackingNo"`
-		ShippingCharge struct {
+		response.Result `json:"result"`
+		TrackingNo      string `json:"trackingNo"`
+		ShippingCharge  struct {
 			Total struct {
 				Amount       float64 `json:"amount"`
 				CurrencyCode string  `json:"currencyCode"`

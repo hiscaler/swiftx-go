@@ -109,12 +109,12 @@ func TestOrderService_Tracking(t *testing.T) {
 	}
 }
 
-func TestOrderService_Price(t *testing.T) {
+func TestOrderService_Postage(t *testing.T) {
 	// 请替换为测试环境中的有效运单号
 	shipmentNumber := "SWX852250000011278331"
-	results, err := client.Services.Order.Price(ctx, shipmentNumber)
+	results, err := client.Services.Order.Postage(ctx, shipmentNumber)
 	if err != nil {
-		t.Fatalf("client.Services.Order.Price() 错误: %v", err)
+		t.Fatalf("client.Services.Order.Postage() 错误: %v", err)
 	}
 	if len(results) == 0 {
 		t.Error("期望获取到订单价格，但结果为空")
